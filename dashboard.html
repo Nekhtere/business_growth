@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard Pendaftar · Forum Batam 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1EEE9;--surface:#fff;--ink:#12214D;--muted:#5b6482;--line:#ddd6ca;--navy:#12296B;--deep:#0B1B47;--gold:#C9A25F;--err:#c4204b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1330;--surface:#13214f;--ink:#eef1fb;--muted:#a4aed2;--line:#2a3a70;--err:#ff7f9f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0a1330;--surface:#13214f;--ink:#eef1fb;--muted:#a4aed2;--line:#2a3a70;--err:#ff7f9f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Plus Jakarta Sans",system-ui,sans-serif;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--deep);z-index:10}
+.hero{background:var(--deep);color:#fff;padding:30px 20px 74px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;right:22px;top:0;width:16px;height:78%;background:var(--gold)}
+.hero::after{content:"";position:absolute;right:-60px;bottom:-70px;width:190px;height:190px;background:var(--navy);transform:rotate(45deg)}
+.hero>div{position:relative;z-index:1;margin:0 auto;padding-right:36px}
+.when{margin:0 0 12px;font-weight:700;color:var(--gold);font-size:.95rem}
+h1{font-weight:800;font-size:clamp(1.65rem,7.4vw,2.6rem);line-height:1.08;letter-spacing:-.015em;margin:0 0 12px}
+.lead{margin:0;opacity:.88;font-size:.98rem;max-width:44ch}
+.shell{margin:0 auto;padding:0 16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px 16px;margin-top:20px}
+.msg{display:none;color:var(--err);font-size:.9rem;margin:14px 0 0;font-weight:500}.msg.on{display:block}
+button{font:800 1.05rem "Plus Jakarta Sans",system-ui,sans-serif;height:54px;border:0;border-radius:16px;cursor:pointer;transition:transform .12s,box-shadow .12s}
+button:focus-visible{outline:3px solid var(--navy);outline-offset:3px}
+button:disabled{opacity:.7;cursor:default}
+.next{background:var(--gold);color:#12214D;box-shadow:0 5px 0 #a3803f}.next:active{transform:translateY(4px);box-shadow:0 1px 0 #a3803f}
+.back{padding:0 20px;background:var(--surface);color:var(--ink);border:2px solid var(--line)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.hero>div,.shell{max-width:980px}
+.hero{padding-bottom:84px}
+.who{margin:14px 0 0;font-size:.9rem;opacity:.85;overflow-wrap:anywhere}
+.top{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.top button{height:44px;font-size:.92rem;border-radius:12px}
+.top .back{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.top .next{box-shadow:0 4px 0 #a3803f}
+.stats{margin-top:-52px;position:relative;z-index:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.st{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 14px 34px rgba(11,27,71,.14)}
+.st span{display:block;font-size:.85rem;color:var(--muted);font-weight:500}
+.st b{display:block;font-size:2rem;font-weight:800;line-height:1.15}
+.st small{color:var(--muted);font-size:.85rem}
+.bar{height:6px;border-radius:99px;background:var(--line);margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);width:0;transition:width .4s}
+.bar.full i{background:var(--err)}
+.tool{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.tool input,.tool select{font:inherit;font-size:1rem;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:0 16px;height:50px}
+.tool input{flex:1 1 220px;min-width:0}
+.tool input:focus-visible,.tool select:focus-visible{outline:none;border-color:var(--navy);box-shadow:0 0 0 4px rgba(201,162,95,.4)}
+.tool .back{height:50px;font-size:.95rem;border-radius:14px}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:16px 0 40px}
+.pass{background:var(--deep);color:#fff;border-radius:22px;position:relative;padding:20px 18px 16px 30px;overflow:hidden}
+.pass::before{content:"";position:absolute;left:0;top:0;bottom:0;width:12px;background:var(--gold)}
+.pass h3{margin:0;font-size:1.15rem;font-weight:800;line-height:1.25;overflow-wrap:anywhere}
+.pass .sub{margin:2px 0 12px;font-size:.9rem;opacity:.85;overflow-wrap:anywhere}
+.pass dl{margin:0;display:grid;gap:8px}
+.pass dt{font-size:.78rem;color:var(--gold);font-weight:700}
+.pass dd{margin:0;font-size:.92rem;font-weight:500;overflow-wrap:anywhere}
+.pass a{color:#fff}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.tags span{background:rgba(255,255,255,.12);border-radius:99px;padding:2px 10px;font-size:.8rem}
+.code{margin-top:14px;border-top:2px dashed rgba(255,255,255,.3);padding-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.code b{font-size:1.15rem;letter-spacing:.04em;color:var(--gold)}
+.code small{opacity:.7;font-size:.78rem}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 10px}
+.load{text-align:center;color:var(--muted);padding:60px 0}
+</style>
+</head>
+<body>
+<header class="hero"><div>
+  <p class="when">Kamis, 19 November 2026 · Hotel Golden View Batam</p>
+  <h1>Data Pendaftar</h1>
+  <p class="who" id="who">Memeriksa akses...</p>
+  <div class="top">
+    <button type="button" class="next" id="csv" disabled>Unduh CSV</button>
+    <button type="button" class="back" id="out">Keluar</button>
+  </div>
+</div></header>
+<div class="shell">
+  <section class="stats" aria-label="Ringkasan">
+    <div class="st"><span>Total pendaftar</span><b id="sT">0</b><small>kedua sesi</small></div>
+    <div class="st"><span>Sesi Pagi · 09.00–12.00</span><b id="s1">0<small> / 30</small></b><div class="bar" id="b1"><i></i></div></div>
+    <div class="st"><span>Sesi Siang · 13.00–16.00</span><b id="s2">0<small> / 30</small></b><div class="bar" id="b2"><i></i></div></div>
+    <div class="st"><span>Mau dihubungi</span><b id="sM">0</b><small>minta tindak lanjut</small></div>
+  </section>
+  <div class="tool">
+    <input type="search" id="q" placeholder="Cari nama, usaha, kode, atau WhatsApp" aria-label="Cari pendaftar">
+    <select id="fs" aria-label="Filter sesi"><option value="">Semua sesi</option><option value="1">Sesi Pagi</option><option value="2">Sesi Siang</option></select>
+    <button type="button" class="back" id="rf">Muat ulang</button>
+  </div>
+  <p class="msg" id="err" role="alert"></p>
+  <div class="list" id="list"><p class="load">Memuat data...</p></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  // GANTI dengan data dari Supabase > Project Settings > API (sama dengan login.html)
+  var SUPABASE_URL="https://PROJECT_ID.supabase.co";
+  var SUPABASE_ANON_KEY="ANON_PUBLIC_KEY";
+  var CAP=30;
+  var sb=null;try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
+  var $=function(i){return document.getElementById(i)};
+  var rows=[];
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+  function fail(t){var e=$("err");e.textContent=t;e.className="msg on"}
+  function tgl(r){return new Date(r.created_at).toLocaleString("id-ID",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}
+  function sesiNama(s){return s===1?"Sesi Pagi · 09.00–12.00 WIB":"Sesi Siang · 13.00–16.00 WIB"}
+  function waLink(n){var d=String(n).replace(/\D/g,"");if(d.indexOf("0")===0)d="62"+d.slice(1);return "https://wa.me/"+d}
+
+  function stats(){
+    var c1=rows.filter(function(r){return r.sesi===1}).length,c2=rows.filter(function(r){return r.sesi===2}).length;
+    $("sT").textContent=rows.length;
+    $("sM").textContent=rows.filter(function(r){return /^Ya/.test(r.minat||"")}).length;
+    [[1,c1],[2,c2]].forEach(function(p){
+      var b=$("s"+p[0]);b.textContent=p[1];b.appendChild(el("small"," / "+CAP));
+      var bar=$("b"+p[0]);bar.firstChild.style.width=Math.min(100,p[1]/CAP*100)+"%";bar.classList.toggle("full",p[1]>=CAP);
+    });
+  }
+  function row(dt,v){var d=el("div");d.appendChild(el("dt",null,dt));var dd=el("dd");if(v instanceof Node)dd.appendChild(v);else dd.textContent=v||"-";d.appendChild(dd);return d}
+  function tags(a){var t=el("div","tags");(a&&a.length?a:["-"]).forEach(function(x){t.appendChild(el("span",null,x))});return t}
+  function draw(){
+    var q=$("q").value.trim().toLowerCase(),fs=$("fs").value,L=$("list");
+    var f=rows.filter(function(r){
+      if(fs&&String(r.sesi)!==fs)return false;
+      return !q||[r.nama,r.usaha,r.kode,r.wa,r.jabatan].join(" ").toLowerCase().indexOf(q)>-1;
+    });
+    L.textContent="";
+    if(!f.length){L.appendChild(el("p","empty",rows.length?"Tidak ada pendaftar yang cocok dengan pencarian.":"Belum ada yang mendaftar."));return}
+    f.forEach(function(r){
+      var p=el("article","pass");
+      p.appendChild(el("h3",null,r.nama));
+      p.appendChild(el("p","sub",r.jabatan+" · "+r.usaha));
+      var dl=el("dl");
+      dl.appendChild(row("Sesi",sesiNama(r.sesi)));
+      var a=el("a",null,r.wa);a.href=waLink(r.wa);a.target="_blank";a.rel="noopener";
+      dl.appendChild(row("WhatsApp",a));
+      dl.appendChild(row("Bidang · skala · tenaga kerja",[r.bidang,r.skala,r.tk].join(" · ")));
+      dl.appendChild(row("Dikelola dengan",r.sistem));
+      dl.appendChild(row("Kebutuhan",tags(r.butuh)));
+      dl.appendChild(row("Rencana pasar",tags(r.pasar)));
+      dl.appendChild(row("Tindak lanjut",r.minat));
+      p.appendChild(dl);
+      var c=el("div","code");c.appendChild(el("b",null,r.kode));c.appendChild(el("small",null,tgl(r)));
+      p.appendChild(c);L.appendChild(p);
+    });
+  }
+  function load(){
+    $("err").className="msg";
+    return sb.from("registrations").select("*").order("created_at",{ascending:false}).then(function(r){
+      if(r.error){fail("Data gagal dimuat: "+r.error.message);return}
+      rows=r.data||[];stats();draw();$("csv").disabled=!rows.length;
+    });
+  }
+  function csv(){
+    var h=["kode","sesi","nama","jabatan","wa","usaha","bidang","skala","tk","sistem","butuh","pasar","minat","created_at"];
+    var esc=function(v){if(Array.isArray(v))v=v.join("; ");v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+    var t=[h.join(",")].concat(rows.map(function(r){return h.map(function(k){return esc(r[k])}).join(",")})).join("\n");
+    var u=URL.createObjectURL(new Blob(["\ufeff"+t],{type:"text/csv;charset=utf-8"})),a=el("a");
+    a.href=u;a.download="pendaftar-forum-batam-2026.csv";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(u)},4000);
+  }
+  $("q").addEventListener("input",draw);$("fs").addEventListener("change",draw);
+  $("rf").addEventListener("click",load);$("csv").addEventListener("click",csv);
+  $("out").addEventListener("click",function(){sb.auth.signOut().then(function(){location.replace("login.html")})});
+
+  if(!sb){fail("Library Supabase gagal dimuat. Muat ulang halaman.");$("who").textContent="Tidak terhubung";return}
+  sb.auth.getSession().then(function(r){
+    var s=r.data.session;
+    if(!s){location.replace("login.html");return}
+    $("who").textContent="Masuk sebagai "+s.user.email;
+    return sb.rpc("is_admin").then(function(a){
+      if(a.error||a.data!==true){return sb.auth.signOut().then(function(){location.replace("login.html?denied=1")})}
+      return load();
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -68,6 +68,10 @@ select:required:invalid{color:var(--muted)}
 .sesi input:checked+label{background:var(--sel);border-color:var(--sel);color:var(--sel-ink);transform:translateY(-2px);box-shadow:0 8px 18px rgba(11,27,71,.22)}
 .chips label{margin:0;cursor:pointer;font-weight:500;font-size:.95rem;background:var(--bg);border:2px solid var(--line);border-radius:99px;padding:0 16px;min-height:46px;display:inline-flex;align-items:center;transition:all .15s}
 .chips input:checked+label{background:var(--sel);border-color:var(--sel);color:var(--sel-ink);font-weight:700}
+.pick input:disabled+label{opacity:.5;cursor:not-allowed}
+.pick label em{display:block;font-style:normal;font-size:.78rem;font-weight:800;color:var(--err);margin-top:2px}
+.next:disabled{opacity:.6;cursor:not-allowed}
+.next:disabled:active{transform:none;box-shadow:0 5px 0 #a3803f}
 .pick input:focus-visible+label{box-shadow:0 0 0 4px rgba(201,162,95,.55)}
 .consent{display:flex;gap:12px;align-items:flex-start;font-weight:400;font-size:.92rem;margin:0;cursor:pointer;line-height:1.45}
 .consent input{width:24px;height:24px;flex:none;accent-color:var(--navy);margin-top:1px}
@@ -280,6 +284,21 @@ body.sent .done{display:block}
   var DEMO=SUPABASE_URL.indexOf("PROJECT_ID")>-1;
   var sb=null;try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
   var $=function(id){return document.getElementById(id)};
+  function tutup(rows){
+    var penuh=0;
+    [1,2].forEach(function(n){
+      var r=rows.filter(function(x){return x.sesi===n})[0],pen=!!r&&r.terisi>=r.kuota;
+      var inp=$("s"+n),lab=document.querySelector('label[for="s'+n+'"]');
+      inp.disabled=pen;
+      if(pen){penuh++;inp.checked=false;if(!lab.querySelector(".pen")){var e=document.createElement("em");e.className="pen";e.textContent="Kuota penuh";lab.appendChild(e)}}
+    });
+    if(penuh===2){$("go").disabled=true;$("go").textContent="Pendaftaran ditutup, kuota penuh";}
+  }
+  function cekKuota(){
+    if(DEMO||!sb)return Promise.resolve();
+    return sb.rpc("kuota_sesi").then(function(r){if(!r.error&&r.data)tutup(r.data)}).catch(function(){});
+  }
+  cekKuota();
   var G={
     bidang:{n:"bidang",t:"radio",o:["Manufaktur dan pengolahan","Makanan dan minuman","Perdagangan dan distribusi","Logistik dan pergudangan","Jasa"]},
     skala:{n:"skala",t:"radio",o:["Kecil","Menengah","Besar"]},
@@ -344,7 +363,7 @@ body.sent .done{display:block}
     $("top").scrollIntoView({behavior:"smooth",block:"start"});
   }
   $("go").addEventListener("click",function(){
-    $("intro").hidden=true;$("form").hidden=false;show(0);
+    $("intro").hidden=true;$("form").hidden=false;show(0);cekKuota();
     window.scrollTo({top:0});
   });
   $("back").addEventListener("click",function(){
@@ -371,6 +390,7 @@ body.sent .done{display:block}
     btn.disabled=true;btn.textContent="Mengirim...";
     (DEMO?Promise.resolve({data:"BGDR-S"+sesi+"-001"}):sb.rpc("submit_registration",{p:data})).then(function(r){
       btn.disabled=false;btn.textContent="Kirim profil usaha";
+      if(r.error&&/SESI_PENUH/.test(r.error.message))cekKuota();
       if(r.error){gagal(/SESI_PENUH/.test(r.error.message)?"Maaf, kuota sesi ini sudah penuh. Kembali ke Langkah 1 untuk memilih sesi lain.":"Pendaftaran gagal terkirim ("+r.error.message+"). Periksa koneksi lalu coba lagi.");return}
       var kode=r.data;$("dKode").textContent=kode;
       last={nama:nama,jabatan:data.jabatan,usaha:data.usaha,bidang:data.bidang,sesi:sesi,kode:kode};

@@ -68,6 +68,16 @@ button:disabled{opacity:.7;cursor:default}
 .code small{opacity:.7;font-size:.78rem}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 10px}
 .load{text-align:center;color:var(--muted);padding:60px 0}
+.pass .del{margin-top:12px;width:100%;height:42px;font-size:.9rem;border-radius:12px;background:transparent;color:#ff9db6;border:2px solid rgba(255,157,182,.45)}
+.pass .del:hover{background:rgba(196,32,75,.25)}
+dialog{border:0;border-radius:22px;padding:22px 20px;max-width:min(420px,calc(100vw - 32px));background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(11,27,71,.6)}
+dialog h2{margin:0 0 8px;font-size:1.2rem;font-weight:800}
+dialog p{margin:0 0 6px;color:var(--muted);font-size:.95rem;overflow-wrap:anywhere}
+dialog .acts{display:flex;gap:10px;margin-top:18px}
+dialog .acts button{flex:1;height:48px;font-size:.95rem;border-radius:14px}
+dialog .danger{background:var(--err);color:#fff}
+
 </style>
 </head>
 <body>
@@ -95,6 +105,15 @@ button:disabled{opacity:.7;cursor:default}
   <p class="msg" id="err" role="alert"></p>
   <div class="list" id="list"><p class="load">Memuat data...</p></div>
 </div>
+<dialog id="dlg" aria-labelledby="dT">
+  <h2 id="dT">Hapus pendaftar?</h2>
+  <p id="dB"></p>
+  <p>Data yang dihapus tidak bisa dikembalikan. Unduh CSV dulu jika perlu cadangan.</p>
+  <div class="acts">
+    <button type="button" class="back" id="dNo">Batal</button>
+    <button type="button" class="danger" id="dYes">Ya, hapus</button>
+  </div>
+</dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
@@ -145,7 +164,10 @@ button:disabled{opacity:.7;cursor:default}
       dl.appendChild(row("Tindak lanjut",r.minat));
       p.appendChild(dl);
       var c=el("div","code");c.appendChild(el("b",null,r.kode));c.appendChild(el("small",null,tgl(r)));
-      p.appendChild(c);L.appendChild(p);
+      p.appendChild(c);
+      var d=el("button","del","Hapus pendaftar");d.type="button";
+      d.addEventListener("click",function(){ask(r)});
+      p.appendChild(d);L.appendChild(p);
     });
   }
   function load(){
@@ -163,6 +185,22 @@ button:disabled{opacity:.7;cursor:default}
     a.href=u;a.download="pendaftar-forum-batam-2026.csv";document.body.appendChild(a);a.click();a.remove();
     setTimeout(function(){URL.revokeObjectURL(u)},4000);
   }
+  var target=null;
+  function ask(r){target=r;$("dB").textContent=r.nama+" ("+r.kode+")";$("dlg").showModal()}
+  function doDelete(){
+    var r=target,b=$("dYes");if(!r)return;
+    b.disabled=true;b.textContent="Menghapus...";
+    sb.from("registrations").delete().eq("id",r.id).select("id").then(function(res){
+      b.disabled=false;b.textContent="Ya, hapus";$("dlg").close();
+      if(res.error){fail("Gagal menghapus: "+res.error.message);return}
+      if(!res.data||!res.data.length){fail("Tidak ada data yang terhapus. Periksa policy DELETE dan GRANT DELETE untuk role authenticated.");return}
+      $("err").className="msg";
+      rows=rows.filter(function(x){return x.id!==r.id});
+      target=null;stats();draw();$("csv").disabled=!rows.length;
+    });
+  }
+  $("dNo").addEventListener("click",function(){$("dlg").close()});
+  $("dYes").addEventListener("click",doDelete);
   $("q").addEventListener("input",draw);$("fs").addEventListener("change",draw);
   $("rf").addEventListener("click",load);$("csv").addEventListener("click",csv);
   $("out").addEventListener("click",function(){sb.auth.signOut().then(function(){location.replace("login.html")})});

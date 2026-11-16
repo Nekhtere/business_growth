@@ -174,7 +174,7 @@ body.sent .done{display:block}
         <div class="field" id="f-wa">
           <label for="wa">Nomor WhatsApp</label>
           <input id="wa" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" placeholder="0812 3456 7890">
-          <div class="msg">Isi nomor dengan 9–14 angka, contoh: 081234567890.</div>
+          <div class="msg">Isi nomor dengan minimal 9 angka, contoh: 081234567890.</div>
         </div>
       </fieldset>
 
@@ -187,7 +187,8 @@ body.sent .done{display:block}
         <div class="field" id="f-bidang">
           <span class="lbl">Bidang usaha utama</span>
           <div class="chips pick" id="bidang"></div>
-          <div class="msg">Pilih bidang usaha yang paling mendekati.</div>
+          <input id="bidangLain" type="text" maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="Atau tulis bidang usaha Anda sendiri" style="margin-top:10px">
+          <div class="msg">Pilih salah satu bidang usaha, atau tulis sendiri.</div>
         </div>
         <div class="field" id="f-skala">
           <span class="lbl">Skala usaha</span>
@@ -256,7 +257,7 @@ body.sent .done{display:block}
 (function(){
   var $=function(id){return document.getElementById(id)};
   var G={
-    bidang:{n:"bidang",t:"radio",o:["Manufaktur dan pengolahan","Makanan dan minuman","Perdagangan dan distribusi","Logistik dan pergudangan","Jasa","Lainnya"]},
+    bidang:{n:"bidang",t:"radio",o:["Manufaktur dan pengolahan","Makanan dan minuman","Perdagangan dan distribusi","Logistik dan pergudangan","Jasa"]},
     skala:{n:"skala",t:"radio",o:["Kecil","Menengah","Besar"]},
     tk:{n:"tk",t:"radio",o:["1–10 orang","11–50 orang","51–100 orang","Lebih dari 100"]},
     sistem:{n:"sistem",t:"radio",o:["Manual atau buku catatan","Excel atau spreadsheet","Aplikasi kasir atau POS","Software akuntansi atau ERP"]},
@@ -278,13 +279,16 @@ body.sent .done{display:block}
   var bars=document.querySelectorAll(".prog i");
 
   function group(name){return document.querySelectorAll("input[name="+name+"]:checked")}
+  function bidangVal(){var c=document.querySelector("input[name=bidang]:checked");return c?c.value:$("bidangLain").value.trim()}
+  $("bidangLain").addEventListener("input",function(){if(this.value.trim())document.querySelectorAll("input[name=bidang]").forEach(function(r){r.checked=false})});
+  document.querySelectorAll("input[name=bidang]").forEach(function(r){r.addEventListener("change",function(){$("bidangLain").value=""})});
   var rules=[
     [["sesi",function(){return group("sesi").length>0},"s1"],
      ["nama",function(){return $("nama").value.trim().length>=3},"nama"],
      ["jabatan",function(){return $("jabatan").value.trim().length>=2},"jabatan"],
-     ["wa",function(){var d=$("wa").value.replace(/\D/g,"");return d.length>=9&&d.length<=14},"wa"]],
+     ["wa",function(){var d=$("wa").value.replace(/\D/g,"");return d.length>=9},"wa"]],
     [["usaha",function(){return $("usaha").value.trim().length>=2},"usaha"],
-     ["bidang",function(){return group("bidang").length>0},"bidang0"],
+     ["bidang",function(){return group("bidang").length>0||$("bidangLain").value.trim().length>=2},"bidang0"],
      ["skala",function(){return group("skala").length>0},"skala0"],
      ["tk",function(){return group("tk").length>0},"tk0"]],
     [["sistem",function(){return group("sistem").length>0},"sistem0"],
@@ -328,10 +332,10 @@ body.sent .done{display:block}
     var nama=$("nama").value.trim();
     $("dTitle").textContent="Terima kasih, "+nama.split(/\s+/)[0]+"!";
     $("dNama").textContent=nama+" · "+$("jabatan").value.trim();
-    $("dUsaha").textContent=$("usaha").value.trim()+" · "+document.querySelector("input[name=bidang]:checked").value;
+    $("dUsaha").textContent=$("usaha").value.trim()+" · "+bidangVal();
     $("dSesi").textContent=sesi==="1"?"Sesi Pagi · 09.00–12.00 WIB":"Sesi Siang · 13.00–16.00 WIB";
     $("dJam").textContent=sesi==="1"?"Registrasi dibuka pukul 09.00 WIB di Hotel Golden View Batam.":"Registrasi dibuka pukul 13.00 WIB di Hotel Golden View Batam.";
-    var kode="BGDR-S"+sesi+"-"+String(Math.floor(100+Math.random()*900));$("dKode").textContent=kode;last={nama:nama,jabatan:$("jabatan").value.trim(),usaha:$("usaha").value.trim(),bidang:document.querySelector("input[name=bidang]:checked").value,sesi:sesi,kode:kode};
+    var kode="BGDR-S"+sesi+"-"+String(Math.floor(100+Math.random()*900));$("dKode").textContent=kode;last={nama:nama,jabatan:$("jabatan").value.trim(),usaha:$("usaha").value.trim(),bidang:bidangVal(),sesi:sesi,kode:kode};
     document.body.classList.add("sent");
     window.scrollTo({top:0,behavior:"smooth"});
   });
@@ -398,7 +402,7 @@ body.sent .done{display:block}
     loadPdf().then(function(){
       var imgs=[].slice.call(document.querySelectorAll(".lg img")).map(function(i){return{s:i,w:i.naturalWidth,h:i.naturalHeight}});
       var blob=makePdf(window.jspdf.jsPDF,last,imgs).output("blob");
-      if(!window.claude||!window.claude.use)throw{code:"unavailable"};
+      if(!window.claude||!window.claude.use){var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Registrasi-"+last.kode+".pdf";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);return}
       return window.claude.use("downloads").then(function(D){
         if(!D)throw{code:"unavailable"};
         return D.save({filename:"Registrasi-"+last.kode+".pdf",data:blob});

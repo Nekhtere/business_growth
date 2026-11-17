@@ -86,8 +86,7 @@ dialog .danger{background:var(--err);color:#fff}
   <h1>Data Pendaftar</h1>
   <p class="who" id="who">Memeriksa akses...</p>
   <div class="top">
-    <button type="button" class="next" id="xls" disabled>Unduh Excel (rapi)</button>
-    <button type="button" class="back" id="csv" disabled>Unduh CSV</button>
+    <button type="button" class="next" id="xls" disabled>Unduh Excel</button>
     <button type="button" class="back" id="out">Keluar</button>
   </div>
 </div></header>
@@ -109,7 +108,7 @@ dialog .danger{background:var(--err);color:#fff}
 <dialog id="dlg" aria-labelledby="dT">
   <h2 id="dT">Hapus pendaftar?</h2>
   <p id="dB"></p>
-  <p>Data yang dihapus tidak bisa dikembalikan. Unduh CSV dulu jika perlu cadangan.</p>
+  <p>Data yang dihapus tidak bisa dikembalikan. Unduh Excel dulu jika perlu cadangan.</p>
   <div class="acts">
     <button type="button" class="back" id="dNo">Batal</button>
     <button type="button" class="danger" id="dYes">Ya, hapus</button>
@@ -176,18 +175,9 @@ dialog .danger{background:var(--err);color:#fff}
     $("err").className="msg";
     return sb.from("registrations").select("*").order("created_at",{ascending:false}).then(function(r){
       if(r.error){fail("Data gagal dimuat: "+r.error.message);return}
-      rows=r.data||[];stats();draw();$("csv").disabled=$("xls").disabled=!rows.length;
+      rows=r.data||[];stats();draw();$("xls").disabled=!rows.length;
     });
   }
-  function csv(){
-    var h=["kode","sesi","nama","jabatan","wa","usaha","bidang","skala","tk","sistem","butuh","pasar","minat","created_at"];
-    var esc=function(v){if(Array.isArray(v))v=v.join("; ");v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-    var t=[h.join(",")].concat(rows.map(function(r){return h.map(function(k){return esc(r[k])}).join(",")})).join("\n");
-    var u=URL.createObjectURL(new Blob(["\ufeff"+t],{type:"text/csv;charset=utf-8"})),a=el("a");
-    a.href=u;a.download="pendaftar-forum-batam-2026.csv";document.body.appendChild(a);a.click();a.remove();
-    setTimeout(function(){URL.revokeObjectURL(u)},4000);
-  }
-
   function wib(v){var p={};new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(v)).forEach(function(x){p[x.type]=x.value});return p.day+" "+p.month+" "+p.year+", "+p.hour+"."+p.minute}
   function xls(){
     if(!window.ExcelJS){fail("Library Excel gagal dimuat. Muat ulang halaman.");return}
@@ -254,13 +244,13 @@ dialog .danger{background:var(--err);color:#fff}
       if(!res.data||!res.data.length){fail("Tidak ada data yang terhapus. Periksa policy DELETE dan GRANT DELETE untuk role authenticated.");return}
       $("err").className="msg";
       rows=rows.filter(function(x){return x.id!==r.id});
-      target=null;stats();draw();$("csv").disabled=$("xls").disabled=!rows.length;
+      target=null;stats();draw();$("xls").disabled=!rows.length;
     });
   }
   $("dNo").addEventListener("click",function(){$("dlg").close()});
   $("dYes").addEventListener("click",doDelete);
   $("q").addEventListener("input",draw);$("fs").addEventListener("change",draw);
-  $("rf").addEventListener("click",load);$("csv").addEventListener("click",csv);$("xls").addEventListener("click",xls);
+  $("rf").addEventListener("click",load);$("xls").addEventListener("click",xls);
   $("out").addEventListener("click",function(){sb.auth.signOut().then(function(){location.replace("login.html")})});
 
   if(!sb){fail("Library Supabase gagal dimuat. Muat ulang halaman.");$("who").textContent="Tidak terhubung";return}

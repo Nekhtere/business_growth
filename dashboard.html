@@ -93,8 +93,8 @@ dialog .danger{background:var(--err);color:#fff}
 <div class="shell">
   <section class="stats" aria-label="Ringkasan">
     <div class="st"><span>Total pendaftar</span><b id="sT">0</b><small>kedua sesi</small></div>
-    <div class="st"><span>Sesi Pagi · 09.00–12.00</span><b id="s1">0<small> / 30</small></b><div class="bar" id="b1"><i></i></div></div>
-    <div class="st"><span>Sesi Siang · 13.00–16.00</span><b id="s2">0<small> / 30</small></b><div class="bar" id="b2"><i></i></div></div>
+    <div class="st"><span>Sesi Pagi · 09.00–12.00</span><b id="s1">0<small> / 33</small></b><div class="bar" id="b1"><i></i></div></div>
+    <div class="st"><span>Sesi Siang · 13.00–16.00</span><b id="s2">0<small> / 33</small></b><div class="bar" id="b2"><i></i></div></div>
     <div class="st"><span>Mau dihubungi</span><b id="sM">0</b><small>minta tindak lanjut</small></div>
   </section>
   <div class="tool">
@@ -121,7 +121,7 @@ dialog .danger{background:var(--err);color:#fff}
   // GANTI dengan data dari Supabase > Project Settings > API (sama dengan login.html)
   var SUPABASE_URL="https://ocmgylerertiaxsdqcrm.supabase.co";
   var SUPABASE_ANON_KEY="sb_publishable_Bl1t7UEnG45FSkkv5slCqg_0HwNbpWY";
-  var CAP=30;
+  var CAP=33;
   var sb=null;try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
   var $=function(i){return document.getElementById(i)};
   var rows=[];

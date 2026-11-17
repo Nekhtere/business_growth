@@ -86,7 +86,8 @@ dialog .danger{background:var(--err);color:#fff}
   <h1>Data Pendaftar</h1>
   <p class="who" id="who">Memeriksa akses...</p>
   <div class="top">
-    <button type="button" class="next" id="csv" disabled>Unduh CSV</button>
+    <button type="button" class="next" id="xls" disabled>Unduh Excel (rapi)</button>
+    <button type="button" class="back" id="csv" disabled>Unduh CSV</button>
     <button type="button" class="back" id="out">Keluar</button>
   </div>
 </div></header>
@@ -114,6 +115,7 @@ dialog .danger{background:var(--err);color:#fff}
     <button type="button" class="danger" id="dYes">Ya, hapus</button>
   </div>
 </dialog>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
@@ -174,7 +176,7 @@ dialog .danger{background:var(--err);color:#fff}
     $("err").className="msg";
     return sb.from("registrations").select("*").order("created_at",{ascending:false}).then(function(r){
       if(r.error){fail("Data gagal dimuat: "+r.error.message);return}
-      rows=r.data||[];stats();draw();$("csv").disabled=!rows.length;
+      rows=r.data||[];stats();draw();$("csv").disabled=$("xls").disabled=!rows.length;
     });
   }
   function csv(){
@@ -184,6 +186,62 @@ dialog .danger{background:var(--err);color:#fff}
     var u=URL.createObjectURL(new Blob(["\ufeff"+t],{type:"text/csv;charset=utf-8"})),a=el("a");
     a.href=u;a.download="pendaftar-forum-batam-2026.csv";document.body.appendChild(a);a.click();a.remove();
     setTimeout(function(){URL.revokeObjectURL(u)},4000);
+  }
+
+  function wib(v){var p={};new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(v)).forEach(function(x){p[x.type]=x.value});return p.day+" "+p.month+" "+p.year+", "+p.hour+"."+p.minute}
+  function xls(){
+    if(!window.ExcelJS){fail("Library Excel gagal dimuat. Muat ulang halaman.");return}
+    var NAVY="FF12296B",DEEP="FF0B1B47",GOLD="FFC9A25F",LINE="FFDDD6CA",ZEBRA="FFF7F4EE";
+    var wb=new ExcelJS.Workbook();wb.creator="Forum Batam 2026";wb.created=new Date();
+    var all=rows.slice().sort(function(a,b){return a.sesi-b.sesi||new Date(a.created_at)-new Date(b.created_at)});
+    var cols=[["No",5],["Kode",15],["Sesi",15],["Nama",24],["Jabatan",18],["WhatsApp",16],["Usaha",26],["Bidang",20],["Skala",12],["Tenaga Kerja",14],["Dikelola Dengan",24],["Kebutuhan",32],["Rencana Pasar",30],["Tindak Lanjut",22],["Waktu Daftar (WIB)",22]];
+    var N=cols.length,HR=5,border={style:"thin",color:{argb:LINE}};
+    var c1=rows.filter(function(r){return r.sesi===1}).length,c2=rows.filter(function(r){return r.sesi===2}).length;
+    var mau=rows.filter(function(r){return /^Ya/.test(r.minat||"")}).length;
+    var tglCetak=new Date().toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
+    function sheet(name,list,info){
+      var ws=wb.addWorksheet(name,{views:[{state:"frozen",ySplit:HR}],properties:{tabColor:{argb:GOLD}},
+        pageSetup:{orientation:"landscape",paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:HR+":"+HR,margins:{left:.4,right:.4,top:.5,bottom:.5,header:.3,footer:.3}}});
+      cols.forEach(function(c,i){ws.getColumn(i+1).width=c[1]});
+      function banner(r,text,size,bold,color,fill,h){
+        ws.mergeCells(r,1,r,N);var c=ws.getCell(r,1);c.value=text;
+        c.font={name:"Calibri",size:size,bold:bold,color:{argb:color}};
+        c.alignment={vertical:"middle",horizontal:"left",indent:1};
+        if(fill)for(var i=1;i<=N;i++)ws.getCell(r,i).fill={type:"pattern",pattern:"solid",fgColor:{argb:fill}};
+        ws.getRow(r).height=h;
+      }
+      banner(1,"DATA PENDAFTAR FORUM BATAM 2026",18,true,"FFFFFFFF",DEEP,34);
+      banner(2,"Kamis, 19 November 2026  ·  Hotel Golden View Batam",11,true,GOLD,DEEP,20);
+      banner(3,info,11,false,"FF12214D","FFEFE7D6",22);
+      banner(4,"Diekspor: "+tglCetak+" WIB",9,false,"FF5B6482",null,18);
+      var h=ws.getRow(HR);h.values=cols.map(function(c){return c[0]});h.height=30;
+      h.eachCell(function(c){
+        c.font={name:"Calibri",size:11,bold:true,color:{argb:"FFFFFFFF"}};
+        c.fill={type:"pattern",pattern:"solid",fgColor:{argb:NAVY}};
+        c.alignment={vertical:"middle",horizontal:"center",wrapText:true};
+        c.border={top:border,bottom:{style:"medium",color:{argb:GOLD}},left:border,right:border};
+      });
+      list.forEach(function(r,i){
+        var row=ws.addRow([i+1,r.kode,r.sesi===1?"Pagi 09.00–12.00":"Siang 13.00–16.00",r.nama,r.jabatan,String(r.wa||""),r.usaha,r.bidang,r.skala,r.tk,r.sistem,(r.butuh||[]).join(", "),(r.pasar||[]).join(", "),r.minat,wib(r.created_at)]);
+        row.eachCell({includeEmpty:true},function(c,n){
+          c.font={name:"Calibri",size:10.5,color:{argb:"FF12214D"}};
+          c.alignment={vertical:"top",horizontal:n===1?"center":"left",wrapText:true};
+          c.border={top:border,bottom:border,left:border,right:border};
+          if(i%2)c.fill={type:"pattern",pattern:"solid",fgColor:{argb:ZEBRA}};
+        });
+        ws.getCell(row.number,6).numFmt="@";
+        ws.getCell(row.number,2).font={name:"Calibri",size:10.5,bold:true,color:{argb:NAVY}};
+      });
+      ws.autoFilter={from:{row:HR,column:1},to:{row:HR+Math.max(list.length,1),column:N}};
+    }
+    sheet("Semua Pendaftar",all,"Total "+rows.length+" pendaftar   |   Sesi Pagi: "+c1+" / "+CAP+"   |   Sesi Siang: "+c2+" / "+CAP+"   |   Mau dihubungi: "+mau);
+    sheet("Sesi Pagi",all.filter(function(r){return r.sesi===1}),"Sesi Pagi · 09.00–12.00 WIB   |   "+c1+" peserta");
+    sheet("Sesi Siang",all.filter(function(r){return r.sesi===2}),"Sesi Siang · 13.00–16.00 WIB   |   "+c2+" peserta");
+    wb.xlsx.writeBuffer().then(function(buf){
+      var u=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})),a=el("a");
+      a.href=u;a.download="pendaftar-forum-batam-2026.xlsx";document.body.appendChild(a);a.click();a.remove();
+      setTimeout(function(){URL.revokeObjectURL(u)},4000);
+    }).catch(function(e){fail("Gagal membuat Excel: "+e.message)});
   }
   var target=null;
   function ask(r){target=r;$("dB").textContent=r.nama+" ("+r.kode+")";$("dlg").showModal()}
@@ -196,13 +254,13 @@ dialog .danger{background:var(--err);color:#fff}
       if(!res.data||!res.data.length){fail("Tidak ada data yang terhapus. Periksa policy DELETE dan GRANT DELETE untuk role authenticated.");return}
       $("err").className="msg";
       rows=rows.filter(function(x){return x.id!==r.id});
-      target=null;stats();draw();$("csv").disabled=!rows.length;
+      target=null;stats();draw();$("csv").disabled=$("xls").disabled=!rows.length;
     });
   }
   $("dNo").addEventListener("click",function(){$("dlg").close()});
   $("dYes").addEventListener("click",doDelete);
   $("q").addEventListener("input",draw);$("fs").addEventListener("change",draw);
-  $("rf").addEventListener("click",load);$("csv").addEventListener("click",csv);
+  $("rf").addEventListener("click",load);$("csv").addEventListener("click",csv);$("xls").addEventListener("click",xls);
   $("out").addEventListener("click",function(){sb.auth.signOut().then(function(){location.replace("login.html")})});
 
   if(!sb){fail("Library Supabase gagal dimuat. Muat ulang halaman.");$("who").textContent="Tidak terhubung";return}

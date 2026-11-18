@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dashboard Pendaftar · Forum Batam 2026</title>
+<title>Dashboard Acara Puncak · Forum Batam 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -77,29 +77,33 @@ dialog p{margin:0 0 6px;color:var(--muted);font-size:.95rem;overflow-wrap:anywhe
 dialog .acts{display:flex;gap:10px;margin-top:18px}
 dialog .acts button{flex:1;height:48px;font-size:.95rem;border-radius:14px}
 dialog .danger{background:var(--err);color:#fff}
+.pass .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.pass .acts button{flex:1;min-width:130px;height:44px;font-size:.9rem;border-radius:12px}
+.pass .acts .del{flex-basis:100%;background:transparent;color:var(--muted);border:1px solid var(--line)}
 
 </style>
 </head>
 <body>
 <header class="hero"><div>
-  <p class="when">Kamis, 19 November 2026 · Hotel Golden View Batam</p>
+  <p class="when">Jumat, 27 November 2026 · 14.00–17.00 WIB · Hotel Golden View Batam</p>
   <h1>Data Pendaftar</h1>
   <p class="who" id="who">Memeriksa akses...</p>
   <div class="top">
     <button type="button" class="next" id="xls" disabled>Unduh Excel</button>
+    <button type="button" class="back" id="toggle">Memuat status...</button>
     <button type="button" class="back" id="out">Keluar</button>
   </div>
 </div></header>
 <div class="shell">
   <section class="stats" aria-label="Ringkasan">
-    <div class="st"><span>Total pendaftar</span><b id="sT">0</b><small>kedua sesi</small></div>
-    <div class="st"><span>Sesi Pagi · 09.00–12.00</span><b id="s1">0<small> / 33</small></b><div class="bar" id="b1"><i></i></div></div>
-    <div class="st"><span>Sesi Siang · 13.00–16.00</span><b id="s2">0<small> / 33</small></b><div class="bar" id="b2"><i></i></div></div>
-    <div class="st"><span>Mau dihubungi</span><b id="sM">0</b><small>minta tindak lanjut</small></div>
+    <div class="st"><span>Total pendaftar</span><b id="sT">0</b><small>kuota 66</small></div>
+    <div class="st"><span>Menunggu</span><b id="sW">0</b><small>belum diproses</small></div>
+    <div class="st"><span>Disetujui</span><b id="sA">0</b><small>tiket aktif</small></div>
+    <div class="st"><span>Terisi</span><b id="s1">0<small> / 66</small></b><div class="bar" id="b1"><i></i></div></div>
   </section>
   <div class="tool">
     <input type="search" id="q" placeholder="Cari nama, usaha, kode, atau WhatsApp" aria-label="Cari pendaftar">
-    <select id="fs" aria-label="Filter sesi"><option value="">Semua sesi</option><option value="1">Sesi Pagi</option><option value="2">Sesi Siang</option></select>
+    <select id="fs" aria-label="Filter status"><option value="">Semua status</option><option value="menunggu">Menunggu</option><option value="disetujui">Disetujui</option><option value="ditolak">Ditolak</option></select>
     <button type="button" class="back" id="rf">Muat ulang</button>
   </div>
   <p class="msg" id="err" role="alert"></p>
@@ -121,32 +125,46 @@ dialog .danger{background:var(--err);color:#fff}
   // GANTI dengan data dari Supabase > Project Settings > API (sama dengan login.html)
   var SUPABASE_URL="https://ocmgylerertiaxsdqcrm.supabase.co";
   var SUPABASE_ANON_KEY="sb_publishable_Bl1t7UEnG45FSkkv5slCqg_0HwNbpWY";
-  var CAP=33;
+  var CAP=66;
+  var MAIL_URL="https://script.google.com/macros/s/AKfycbwBpGpPXFqNUk4rgXBN9QyqXyi_924u5hrwCb02RbeUxY_XF7hxHC1dojAmrxuuW14/exec";
+  var MAIL_SECRET="puncak2026-rahasia";
+  var GRUP_WA="https://chat.whatsapp.com/Gi4M1mR6ZKwJ1HBkTUhCV7";
   var sb=null;try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
   var $=function(i){return document.getElementById(i)};
   var rows=[];
+  var busy={};
+  var sending={};
+  var dibuka=true;
   function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
   function fail(t){var e=$("err");e.textContent=t;e.className="msg on"}
   function tgl(r){return new Date(r.created_at).toLocaleString("id-ID",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}
-  function sesiNama(s){return s===1?"Sesi Pagi · 09.00–12.00 WIB":"Sesi Siang · 13.00–16.00 WIB"}
-  function waLink(n){var d=String(n).replace(/\D/g,"");if(d.indexOf("0")===0)d="62"+d.slice(1);return "https://wa.me/"+d}
+  function statusLabel(s){return s==="disetujui"?"Disetujui":s==="ditolak"?"Ditolak":"Menunggu"}
+  function waNorm(s){
+    var d=String(s||"").replace(/\D/g,"");
+    if(d.indexOf("0")===0)d="62"+d.slice(1);
+    else if(d.indexOf("8")===0)d="62"+d;
+    else if(d.indexOf("620")===0)d="62"+d.slice(3);
+    return d;
+  }
+  function waTampil(s){var d=waNorm(s);return d?"+"+d.slice(0,2)+" "+d.slice(2,5)+"-"+d.slice(5,9)+"-"+d.slice(9):"-"}
+  function waLink(n){return "https://wa.me/"+waNorm(n)}
 
   function stats(){
-    var c1=rows.filter(function(r){return r.sesi===1}).length,c2=rows.filter(function(r){return r.sesi===2}).length;
+    var setuju=rows.filter(function(r){return r.status==="disetujui"}).length;
+    var tunggu=rows.filter(function(r){return r.status==="menunggu"}).length;
     $("sT").textContent=rows.length;
-    $("sM").textContent=rows.filter(function(r){return /^Ya/.test(r.minat||"")}).length;
-    [[1,c1],[2,c2]].forEach(function(p){
-      var b=$("s"+p[0]);b.textContent=p[1];b.appendChild(el("small"," / "+CAP));
-      var bar=$("b"+p[0]);bar.firstChild.style.width=Math.min(100,p[1]/CAP*100)+"%";bar.classList.toggle("full",p[1]>=CAP);
-    });
+    $("sW").textContent=tunggu;
+    $("sA").textContent=setuju;
+    var b=$("s1");b.textContent=setuju;b.appendChild(el("small"," / "+CAP));
+    var bar=$("b1");bar.firstChild.style.width=Math.min(100,setuju/CAP*100)+"%";bar.classList.toggle("full",setuju>=CAP);
   }
   function row(dt,v){var d=el("div");d.appendChild(el("dt",null,dt));var dd=el("dd");if(v instanceof Node)dd.appendChild(v);else dd.textContent=v||"-";d.appendChild(dd);return d}
   function tags(a){var t=el("div","tags");(a&&a.length?a:["-"]).forEach(function(x){t.appendChild(el("span",null,x))});return t}
   function draw(){
     var q=$("q").value.trim().toLowerCase(),fs=$("fs").value,L=$("list");
     var f=rows.filter(function(r){
-      if(fs&&String(r.sesi)!==fs)return false;
-      return !q||[r.nama,r.usaha,r.kode,r.wa,r.jabatan].join(" ").toLowerCase().indexOf(q)>-1;
+      if(fs&&r.status!==fs)return false;
+      return !q||[r.nama,r.usaha,r.kode,r.wa,r.jabatan,r.email].join(" ").toLowerCase().indexOf(q)>-1;
     });
     L.textContent="";
     if(!f.length){L.appendChild(el("p","empty",rows.length?"Tidak ada pendaftar yang cocok dengan pencarian.":"Belum ada yang mendaftar."));return}
@@ -155,8 +173,9 @@ dialog .danger{background:var(--err);color:#fff}
       p.appendChild(el("h3",null,r.nama));
       p.appendChild(el("p","sub",r.jabatan+" · "+r.usaha));
       var dl=el("dl");
-      dl.appendChild(row("Sesi",sesiNama(r.sesi)));
-      var a=el("a",null,r.wa);a.href=waLink(r.wa);a.target="_blank";a.rel="noopener";
+      dl.appendChild(row("Status",statusLabel(r.status)));
+      dl.appendChild(row("Email",r.email||"-"));
+      var a=el("a",null,waTampil(r.wa));a.href=waLink(r.wa);a.target="_blank";a.rel="noopener";
       dl.appendChild(row("WhatsApp",a));
       dl.appendChild(row("Bidang · skala · tenaga kerja",[r.bidang,r.skala,r.tk].join(" · ")));
       dl.appendChild(row("Dikelola dengan",r.sistem));
@@ -166,16 +185,110 @@ dialog .danger{background:var(--err);color:#fff}
       p.appendChild(dl);
       var c=el("div","code");c.appendChild(el("b",null,r.kode));c.appendChild(el("small",null,tgl(r)));
       p.appendChild(c);
+      var acts=el("div","acts");
+      if(r.status!=="disetujui"){
+        var ap=el("button","next","Setujui");ap.type="button";
+        ap.addEventListener("click",function(){
+          if(!confirm("Setujui pendaftar "+r.nama+"? Email tiket akan dikirim otomatis."))return;
+          bukaWa(r);ubahStatus(r,"disetujui");
+        });
+        acts.appendChild(ap);
+      }
+      if(r.status!=="ditolak"){
+        var tj=el("button","back","Tolak");tj.type="button";
+        tj.addEventListener("click",function(){
+          if(confirm("Tolak pendaftar "+r.nama+"?"))ubahStatus(r,"ditolak");
+        });
+        acts.appendChild(tj);
+      }
+      if(r.status==="disetujui"){
+        var wb=el("button","back",r.wa_sent_at?"Buka WA lagi":"Kirim WA");wb.type="button";
+        wb.addEventListener("click",function(){kirimWa(r)});
+        acts.appendChild(wb);
+        var mb=el("button","next",r.email_sent_at?"Kirim ulang email":"Kirim email tiket");mb.type="button";
+        mb.addEventListener("click",function(){kirimEmail(r,true)});
+        acts.appendChild(mb);
+      }
       var d=el("button","del","Hapus pendaftar");d.type="button";
       d.addEventListener("click",function(){ask(r)});
-      p.appendChild(d);L.appendChild(p);
+      acts.appendChild(d);p.appendChild(acts);L.appendChild(p);
     });
   }
+  function statusPendaftaran(){
+    return sb.rpc("kuota_sesi").then(function(r){
+      var d=r.data&&r.data[0];
+      if(r.error||!d)return;
+      dibuka=!!d.dibuka;
+      $("toggle").textContent=dibuka?"Tutup pendaftaran":"Buka pendaftaran";
+    });
+  }
+  function togglePendaftaran(){
+    if(!confirm(dibuka?"Tutup pendaftaran sekarang? Pendaftar baru tidak bisa mengirim form.":"Buka pendaftaran kembali?"))return;
+    $("toggle").disabled=true;
+    return sb.rpc("set_pendaftaran",{p_buka:!dibuka}).then(function(r){
+      $("toggle").disabled=false;
+      if(r.error){fail("Gagal mengubah status: "+r.error.message);return}
+      $("err").className="msg";
+      return statusPendaftaran();
+    }).catch(function(e){$("toggle").disabled=false;fail("Gagal mengubah status: "+e.message)});
+  }
+
+  function ubahStatus(r,status){
+    if(busy[r.id])return;
+    busy[r.id]=true;
+    $("err").className="msg";
+    return sb.rpc("set_status",{p_id:r.id,p_status:status}).then(function(res){
+      busy[r.id]=false;
+      if(res.error){fail("Gagal mengubah status: "+res.error.message);return}
+      r.status=status;
+      if(status==="disetujui"){
+        r.wa_sent_at=new Date().toISOString();
+        sb.rpc("mark_sent",{p_id:r.id,p_kind:"wa"});
+        kirimEmail(r,false);
+      }
+      stats();draw();
+    }).catch(function(e){busy[r.id]=false;fail("Gagal mengubah status: "+e.message)});
+  }
+
+  function kirimEmail(r,force){
+    if(!MAIL_URL){fail("URL Apps Script belum diisi. Baca apps-script/README.md.");return}
+    if((r.email_sent_at||sending[r.kode])&&!force)return;
+    sending[r.kode]=true;
+    if(window.__mailScript&&window.__mailScript.parentNode)window.__mailScript.parentNode.removeChild(window.__mailScript);
+    window.__mailCb=function(res){
+      sending[r.kode]=false;
+      if(!res||!res.ok){fail("Email tiket gagal: "+((res&&res.error)||"tidak diketahui"));return}
+      $("err").className="msg";
+      r.email_sent_at=new Date().toISOString();
+      sb.rpc("mark_sent",{p_id:r.id,p_kind:"email"});
+      draw();
+    };
+    var s=document.createElement("script");
+    s.src=MAIL_URL+"?callback=__mailCb&kode="+encodeURIComponent(r.kode)+"&secret="+encodeURIComponent(MAIL_SECRET);
+    s.onerror=function(){sending[r.kode]=false;fail("Apps Script tidak dapat dihubungi. Periksa URL dan deployment.")};
+    window.__mailScript=s;document.head.appendChild(s);
+    setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s)},10000);
+  }
+
+  function bukaWa(r){
+    var pesan="Halo "+r.nama+", pendaftaran Acara Puncak Business Growth & Digital Readiness Forum Batam 2026 Anda DISSETUJUI. "
+      +"Jumat, 27 November 2026, 14.00-17.00 WIB, Hotel Golden View Batam. Kode tiket: "+r.kode+". "
+      +"Tiket PDF dikirim ke email Anda. Gabung grup: "+GRUP_WA;
+    window.open(waLink(r.wa)+"?text="+encodeURIComponent(pesan),"_blank","noopener");
+  }
+  function kirimWa(r){
+    bukaWa(r);
+    r.wa_sent_at=new Date().toISOString();
+    sb.rpc("mark_sent",{p_id:r.id,p_kind:"wa"});
+    draw();
+  }
+
   function load(){
     $("err").className="msg";
     return sb.from("registrations").select("*").order("created_at",{ascending:false}).then(function(r){
       if(r.error){fail("Data gagal dimuat: "+r.error.message);return}
-      rows=r.data||[];stats();draw();$("xls").disabled=!rows.length;
+      rows=(r.data||[]).filter(function(x){return /^BGAP-/.test(x.kode||"")});
+      stats();draw();$("xls").disabled=!rows.length;statusPendaftaran();
     });
   }
   function wib(v){var p={};new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(v)).forEach(function(x){p[x.type]=x.value});return p.day+" "+p.month+" "+p.year+", "+p.hour+"."+p.minute}
@@ -183,11 +296,12 @@ dialog .danger{background:var(--err);color:#fff}
     if(!window.ExcelJS){fail("Library Excel gagal dimuat. Muat ulang halaman.");return}
     var NAVY="FF12296B",DEEP="FF0B1B47",GOLD="FFC9A25F",LINE="FFDDD6CA",ZEBRA="FFF7F4EE";
     var wb=new ExcelJS.Workbook();wb.creator="Forum Batam 2026";wb.created=new Date();
-    var all=rows.slice().sort(function(a,b){return a.sesi-b.sesi||new Date(a.created_at)-new Date(b.created_at)});
-    var cols=[["No",5],["Kode",15],["Sesi",15],["Nama",24],["Jabatan",18],["WhatsApp",16],["Usaha",26],["Bidang",20],["Skala",12],["Tenaga Kerja",14],["Dikelola Dengan",24],["Kebutuhan",32],["Rencana Pasar",30],["Tindak Lanjut",22],["Waktu Daftar (WIB)",22]];
+    var all=rows.slice().sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at)});
+    var cols=[["No",5],["Kode",15],["Status",13],["Nama",24],["Jabatan",18],["WhatsApp",16],["Email",24],["Usaha",26],["Bidang",20],["Skala",12],["Tenaga Kerja",14],["Dikelola Dengan",24],["Kebutuhan",32],["Rencana Pasar",30],["Tindak Lanjut",22],["Waktu Daftar (WIB)",22]];
     var N=cols.length,HR=5,border={style:"thin",color:{argb:LINE}};
-    var c1=rows.filter(function(r){return r.sesi===1}).length,c2=rows.filter(function(r){return r.sesi===2}).length;
-    var mau=rows.filter(function(r){return /^Ya/.test(r.minat||"")}).length;
+    var setuju=rows.filter(function(r){return r.status==="disetujui"}).length;
+    var tunggu=rows.filter(function(r){return r.status==="menunggu"}).length;
+    var tolak=rows.filter(function(r){return r.status==="ditolak"}).length;
     var tglCetak=new Date().toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
     function sheet(name,list,info){
       var ws=wb.addWorksheet(name,{views:[{state:"frozen",ySplit:HR}],properties:{tabColor:{argb:GOLD}},
@@ -200,8 +314,8 @@ dialog .danger{background:var(--err);color:#fff}
         if(fill)for(var i=1;i<=N;i++)ws.getCell(r,i).fill={type:"pattern",pattern:"solid",fgColor:{argb:fill}};
         ws.getRow(r).height=h;
       }
-      banner(1,"DATA PENDAFTAR FORUM BATAM 2026",18,true,"FFFFFFFF",DEEP,34);
-      banner(2,"Kamis, 19 November 2026  ·  Hotel Golden View Batam",11,true,GOLD,DEEP,20);
+      banner(1,"DATA PENDAFTAR ACARA PUNCAK FORUM BATAM 2026",18,true,"FFFFFFFF",DEEP,34);
+      banner(2,"Jumat, 27 November 2026  ·  14.00–17.00 WIB  ·  Hotel Golden View Batam",11,true,GOLD,DEEP,20);
       banner(3,info,11,false,"FF12214D","FFEFE7D6",22);
       banner(4,"Diekspor: "+tglCetak+" WIB",9,false,"FF5B6482",null,18);
       var h=ws.getRow(HR);h.values=cols.map(function(c){return c[0]});h.height=30;
@@ -212,7 +326,7 @@ dialog .danger{background:var(--err);color:#fff}
         c.border={top:border,bottom:{style:"medium",color:{argb:GOLD}},left:border,right:border};
       });
       list.forEach(function(r,i){
-        var row=ws.addRow([i+1,r.kode,r.sesi===1?"Pagi 09.00–12.00":"Siang 13.00–16.00",r.nama,r.jabatan,String(r.wa||""),r.usaha,r.bidang,r.skala,r.tk,r.sistem,(r.butuh||[]).join(", "),(r.pasar||[]).join(", "),r.minat,wib(r.created_at)]);
+        var row=ws.addRow([i+1,r.kode,statusLabel(r.status),r.nama,r.jabatan,String(r.wa||""),r.email||"-",r.usaha,r.bidang,r.skala,r.tk,r.sistem,(r.butuh||[]).join(", "),(r.pasar||[]).join(", "),r.minat,wib(r.created_at)]);
         row.eachCell({includeEmpty:true},function(c,n){
           c.font={name:"Calibri",size:10.5,color:{argb:"FF12214D"}};
           c.alignment={vertical:"top",horizontal:n===1?"center":"left",wrapText:true};
@@ -220,13 +334,12 @@ dialog .danger{background:var(--err);color:#fff}
           if(i%2)c.fill={type:"pattern",pattern:"solid",fgColor:{argb:ZEBRA}};
         });
         ws.getCell(row.number,6).numFmt="@";
+        ws.getCell(row.number,7).numFmt="@";
         ws.getCell(row.number,2).font={name:"Calibri",size:10.5,bold:true,color:{argb:NAVY}};
       });
       ws.autoFilter={from:{row:HR,column:1},to:{row:HR+Math.max(list.length,1),column:N}};
     }
-    sheet("Semua Pendaftar",all,"Total "+rows.length+" pendaftar   |   Sesi Pagi: "+c1+" / "+CAP+"   |   Sesi Siang: "+c2+" / "+CAP+"   |   Mau dihubungi: "+mau);
-    sheet("Sesi Pagi",all.filter(function(r){return r.sesi===1}),"Sesi Pagi · 09.00–12.00 WIB   |   "+c1+" peserta");
-    sheet("Sesi Siang",all.filter(function(r){return r.sesi===2}),"Sesi Siang · 13.00–16.00 WIB   |   "+c2+" peserta");
+    sheet("Semua Pendaftar",all,"Total "+rows.length+" pendaftar   |   Disetujui: "+setuju+" / "+CAP+"   |   Menunggu: "+tunggu+"   |   Ditolak: "+tolak);
     wb.xlsx.writeBuffer().then(function(buf){
       var u=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})),a=el("a");
       a.href=u;a.download="pendaftar-forum-batam-2026.xlsx";document.body.appendChild(a);a.click();a.remove();
@@ -251,6 +364,7 @@ dialog .danger{background:var(--err);color:#fff}
   $("dYes").addEventListener("click",doDelete);
   $("q").addEventListener("input",draw);$("fs").addEventListener("change",draw);
   $("rf").addEventListener("click",load);$("xls").addEventListener("click",xls);
+  $("toggle").addEventListener("click",togglePendaftaran);
   $("out").addEventListener("click",function(){sb.auth.signOut().then(function(){location.replace("login.html")})});
 
   if(!sb){fail("Library Supabase gagal dimuat. Muat ulang halaman.");$("who").textContent="Tidak terhubung";return}

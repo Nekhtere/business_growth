@@ -33,6 +33,8 @@ Assert-Contains 'dashboard.html' 'MAIL_URL' 'dashboard email'
 Assert-Contains 'dashboard.html' 'wa.me' 'dashboard WA'
 Assert-Contains 'dashboard.html' 'set_pendaftaran' 'dashboard sakelar'
 Assert-Contains 'dashboard.html' 'Tutup pendaftaran' 'dashboard tombol tutup'
+Assert-Contains 'dashboard.html' 'DASHBOARD_DITUTUP=true' 'dashboard ditutup'
+Assert-Contains 'login.html' 'LOGIN_DITUTUP=true' 'login ditutup'
 Assert-NotContains 'dashboard.html' 'Sesi Pagi' 'dashboard sesi lama'
 Assert-NotContains 'dashboard.html' '19 November 2026' 'dashboard tanggal lama'
 

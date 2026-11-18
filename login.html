@@ -63,6 +63,11 @@ button:disabled{opacity:.7;cursor:default}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
+  var LOGIN_DITUTUP=true;
+  if(LOGIN_DITUTUP){
+    document.body.innerHTML='<header class="hero"><div><p class="when">Acara Puncak · Forum Batam 2026</p><h1>Akses panitia ditutup</h1></div></header><div class="shell"><section class="card"><p>Halaman login panitia sedang dinonaktifkan.</p></section></div>';
+    return;
+  }
   // GANTI dengan data dari Supabase > Project Settings > API
   var SUPABASE_URL="https://ocmgylerertiaxsdqcrm.supabase.co";
   var SUPABASE_ANON_KEY="sb_publishable_Bl1t7UEnG45FSkkv5slCqg_0HwNbpWY";
